@@ -4,58 +4,72 @@ import java.util.*;
 public class Proxy extends Thread {
 
 	public static void main(String[] args) {
-		Proxy myProxy=new Proxy(8888);
-		myProxy.listen();
+		Proxy myProxy=new Proxy(8888); // lắng nghe client ở cổng 8888
+		
+		myProxy.listen();  // gọi method listen() ở dưới
 
 	}
 	
-	private ServerSocket serverSocket;
-	private volatile boolean running=true;
-	static HashMap<String,String>blackList;
-	static ArrayList<Thread>receivingThread; 
+	private ServerSocket serverSocket;  // tạo ra 1 cái socket 
 	
-	public Proxy(int port) {
-		blackList=new HashMap<String,String>();
-		receivingThread=new ArrayList<Thread>();
+	private volatile boolean running=true; // điều kiện để tiếp tục chạy hàm run() ở phía dưới
+	
+	// vì HashMap là 1 collection nên nó được serialize (tuần tự) nên có thể đọc ghi dữ liệu theo kiểu ObjectOut/InputStream
+	static HashMap<String,String>blackList;  //danh sách các website sẽ bị block
+	
+	static ArrayList<Thread>receivingThread;  // danh sách các luồng dữ liệu trong chương trình 
+	
+	public Proxy(int port) { // constructor khi khởi tạo 1 object proxy với tham số cần truyền vào là cổng để kết nối với client
+		blackList=new HashMap<String,String>(); // khởi tạo blackList là 1 collection framework kiểu HashMap (key-value)
+		receivingThread=new ArrayList<Thread>(); // Khởi tạo mảng các luồng dữ liệu trong chương trình
 		
-		new Thread(this).start(); // call the run method at the bottom
+		new Thread(this).start(); // gọi start() thì hàm start() sẽ gọi đến hàm run(), đây là 1 hàm đã được định nghĩa sẵn trong Thead class
 		
 		try {
 			
-			File blackListFile =new File("blackList.txt");
-			if(!blackListFile.exists()) {
+			File blackListFile =new File("blackList.conf"); // cố để mở file "backList.conf" 
+			
+			if(!blackListFile.exists()) { // nếu file không tồn tại
 				System.out.println("Can not find any File like this!!!");
-				blackListFile.createNewFile();
+				blackListFile.createNewFile(); // tạo ra 1 file mới có tên "blackList.conf" trong folder
 			}
 			else {
-				ObjectInputStream objectInputStream=new ObjectInputStream(new FileInputStream(blackListFile));
-				blackList=(HashMap<String,String>)objectInputStream.readObject(); 
+				// nếu file đã tồn tại trong folder
+				ObjectInputStream objectInputStream=new ObjectInputStream(new FileInputStream(blackListFile)); // đọc từ file backListFile theo kiểu object
+				blackList=(HashMap<String,String>)objectInputStream.readObject(); // ép kiểu dữ liệu về HashMap
 				objectInputStream.close();
+				// kiểu ObjectInputStream là ta sẽ đọc dữ liệu theo kiểu mà ta đã lưu dữ liệu vào file
 			}
 		}
-		catch(Exception e)
+		catch(Exception e) // nếu xảy ra lỗi thì sẽ chạy vào exception
 		{
 			System.out.println(e);
 		}
 		
+		// kết nối với client 
+		
 		try {
-			serverSocket=new ServerSocket(port);
+			serverSocket=new ServerSocket(port); // tạo ra 1 socket tại cổng port (8888) - đây là cổng mà proxy lắng nghe clienrt
 			System.out.println("Waiting for client on port "+serverSocket.getLocalPort()+" ...");
-			this.running=true;
+			this.running=true; // gán cho running=true để chương trình tiếp tục chạy
 		}
 		catch(Exception e) {
 			System.out.println(e);
 		}
+		
 	}
 	
+	// hàm lắng nghe và thực hiện lệnh được gọi trong hàm main
 	public void listen() {
-		while(running) {
+		while(running) { // chạy khi running =true,khi false thì nó sẽ dừng
 			try {
-				Socket socket=serverSocket.accept();
 				
-				Thread thread=new Thread(new RequestHandler(socket));
-				thread.start();
-				receivingThread.add(thread);
+				Socket socket=serverSocket.accept(); // tạo ra 1 socket để kết nối vs serverSocket(proxy) tại cổng 8888
+				// nói sau hàm này
+				Thread thread=new Thread(new RequestHandler(socket)); // đây là class RequestHandler.java
+				thread.start(); // thread sẽ chạy hàm run() trong class RequestHandler.java
+				
+				receivingThread.add(thread); // thêm thread vào mảng các thread array của chương trình
 			}
 			catch(Exception e) {
 				System.out.println(e);
@@ -66,19 +80,10 @@ public class Proxy extends Thread {
 	private void closeServer() {
 		System.out.println("\nClosing server.......");
 		try
-		{
-			FileOutputStream fileOutputStream1 = new FileOutputStream("cachedSites.txt");
-			ObjectOutputStream objectOutputStream1 = new ObjectOutputStream(fileOutputStream1);
-
-			
-			objectOutputStream1.close();
-			fileOutputStream1.close();
-			System.out.println("Cached Sites written");
-			
-			
-			FileOutputStream fileOut=new FileOutputStream("blackList.txt");
+		{			
+			FileOutputStream fileOut=new FileOutputStream("blackList.conf");
 			ObjectOutputStream obj=new ObjectOutputStream(fileOut);
-			obj.writeObject(blackList);
+			obj.writeObject(blackList);// ghi nguyên 1 object vào với kiểu dữ liệu HashMap<String,String>
 			obj.close();
 			fileOut.close();
 			System.out.println("Black list is saved!!");
@@ -119,6 +124,7 @@ public class Proxy extends Thread {
 		return false;
 	}
 	
+	@Override
 	public void run()
 	{
 		Scanner scanner=new Scanner(System.in);
