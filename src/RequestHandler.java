@@ -3,7 +3,7 @@ import java.io.*;
 import java.net.*;
 
 import javax.imageio.ImageIO;
-
+import java.awt.Desktop;  
 
 public class RequestHandler extends Thread{
 
@@ -28,86 +28,14 @@ public class RequestHandler extends Thread{
 	private void sendNonCachedToClient(String urlString){
 
 		try{
-			
-			// Compute a logical file name as per schema
-			// This allows the files on stored on disk to resemble that of the URL it was taken from
-			int fileExtensionIndex = urlString.lastIndexOf(".");
-			String fileExtension;
-
-			// Get the type of file
-			fileExtension = urlString.substring(fileExtensionIndex, urlString.length());
-
-			// Get the initial file name
-			String fileName = urlString.substring(0,fileExtensionIndex);
-
-
-			// Trim off http://www. as no need for it in file name
-			fileName = fileName.substring(fileName.indexOf('.')+1);
-
-			// Remove any illegal characters from file name
-			fileName = fileName.replace("/", "__");
-			fileName = fileName.replace('.','_');
-			
-			// Trailing / result in index.html of that directory being fetched
-			if(fileExtension.contains("/")){
-				fileExtension = fileExtension.replace("/", "__");
-				fileExtension = fileExtension.replace('.','_');
-				fileExtension += ".html";
-			}
-		
-			fileName = fileName + fileExtension;
-
-
-
-			// Attempt to create File to cache to
-			
-
-			// Check if file is an image
-			if((fileExtension.contains(".png")) || fileExtension.contains(".jpg") ||fileExtension.contains(".jpeg") || fileExtension.contains(".gif")){
-				// Create the URL
-				URL remoteURL = new URL(urlString);
-				BufferedImage image = ImageIO.read(remoteURL); // dùng đê đọc dữ liệu kiểu ảnh
-
-				if(image != null) { // check xem có ảnh ko hay
-					// Send response code to client
-					String line = "HTTP/1.0 200 OK\n" +
-							"Proxy-agent: ProxyServer/1.0\n" +
-							"\r\n"; // status trả về dữ liệu OK
-					proxyToClientWr.write(line); // trả về cho client biết là dữ liệu ảnh này ổn (OK)
-					proxyToClientWr.flush();  // xóa bộ nhớ đệm
-
-					// Send them the image data
-					ImageIO.write(image, fileExtension.substring(1), clientSocket.getOutputStream());// gửi data cho client
-
-				// No image received from remote server
-				} else {
-					System.out.println("Sending 404 to client as image wasn't received from server"
-							+ fileName);
-					String error = "HTTP/1.0 404 NOT FOUND\n" +
-							"Proxy-agent: ProxyServer/1.0\n" +
-							"\r\n";
-					proxyToClientWr.write(error); // trả về lỗi
-					proxyToClientWr.flush();
-					return;
-				}
-			} 
-
-			// File is a text file
-			else {
-								
-				// Create the URL
-				URL remoteURL = new URL(urlString);
-				// Create a connection to remote server
+										
+				URL remoteURL = new URL(urlString); // khởi tạo 1 class URL để giữ đường dẫn cần truy cập đến
+				// tạo 1 connection và cho phép client truy cập vào URL
 				HttpURLConnection proxyToServerCon = (HttpURLConnection)remoteURL.openConnection();
-				proxyToServerCon.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
-				proxyToServerCon.setRequestProperty("Content-Language", "en-US");  
-				//proxyToServerCon.setUseCaches(false);
-				proxyToServerCon.setDoOutput(true);
-			
-				// Create Buffered Reader from remote Server
+				proxyToServerCon.setRequestMethod("GET");  // set Request để lấy dữ liệu là phương thức GET
+				proxyToServerCon.setRequestProperty("User-Agent", "Mozilla/5.0");			
+				// tạo biến để đọc dữ liệu từ Webserver đến proxy và gửi cho client				
 				BufferedReader proxyToServerBR = new BufferedReader(new InputStreamReader(proxyToServerCon.getInputStream()));
-				
-
 				// Send success code to client
 				String line = "HTTP/1.0 200 OK\n" +
 						"Proxy-agent: ProxyServer/1.0\n" +
@@ -121,20 +49,17 @@ public class RequestHandler extends Thread{
 					proxyToClientWr.write(line); // proxy chuyển dữ liệu từ proxy đến client
 					
 				}
-				proxyToClientWr.flush();
-
-				// Close Down Resources
+				proxyToClientWr.flush(); // xoa bộ nhớ đệm
+		
+				// đóng file đọc
 				if(proxyToServerBR != null){
 					proxyToServerBR.close();
 				}
-			}
-			// Close down resources
-			
-			if(proxyToClientWr != null){
-				proxyToClientWr.close();
-			}
+				// đóng file ghi cho client
+				if(proxyToClientWr != null){
+					proxyToClientWr.close();
+				}
 		} 
-
 		catch (Exception e){
 			e.printStackTrace();
 		}
@@ -156,7 +81,7 @@ public class RequestHandler extends Thread{
 		System.out.println("Request receiving "+requestString); // xem thử có nhận được request hay không
 		
 		// parse URL
-		String request=requestString.substring(0,requestString.indexOf(' ')); // GET hoăc POST
+		//String request=requestString.substring(0,requestString.indexOf(' ')); // GET hoăc POST
 		String urlString=requestString.substring(requestString.indexOf(' ')+1); 
 		urlString=urlString.substring(0,urlString.indexOf(' ')); // đường dẫn url
 		
@@ -187,8 +112,19 @@ public class RequestHandler extends Thread{
 					"User-Agent: ProxyServer/1.0\n" +
 					"\r\n";
 			bufferedWriter.write(line);
-			bufferedWriter.write("<html>"
-					+ "<body>blocked</body></html>");
+			StringBuilder contentBuilder = new StringBuilder();
+			try {
+			    BufferedReader in = new BufferedReader(new FileReader("src/ForbiddenPage/html/index.html"));
+			    String str;
+			    while ((str = in.readLine()) != null) {
+			        contentBuilder.append(str);
+			    }
+			    in.close();
+			} catch (IOException e) {
+				e.getStackTrace();
+			}
+			String content = contentBuilder.toString();
+			bufferedWriter.write(content); // trả về cho user biết là page đã bị blocked
 			bufferedWriter.flush();
 			
 		}catch(Exception e)
