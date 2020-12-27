@@ -85,7 +85,7 @@ public class Proxy extends Thread {
 			obj.writeObject(blackList);// ghi nguyên 1 object vào với kiểu dữ liệu HashMap<String,String>
 			obj.close();
 			fileOut.close();
-			System.out.println("Black list is saved!!");
+			System.out.println("******Black list is saved!!********");
 		}
 		catch(Exception e)
 		{
@@ -127,18 +127,39 @@ public class Proxy extends Thread {
 	}
 	
 	
+	private boolean isInteger(String in)
+	{
+		boolean tcin=false;
+		try
+		{
+			Integer.parseInt(in);
+			tcin=true;
+		}
+		catch(Exception e)
+		{
+			e.getStackTrace();
+		}
+		return tcin;
+	}
 	
 	public int selectMenu(int soluachon)
 	{
-		int luachon;
+		String luachon;
+		int res=-1;
+		boolean tcin;
 		do
 		{
 			System.out.println("Enter your choice : ");
-			luachon=scanner.nextInt();
-	
-		}while(luachon<0||luachon>4);
+			luachon=scanner.nextLine();
+			tcin=isInteger(luachon);
+			if(tcin==true)
+			{
+				res=Integer.parseInt(luachon);
+			}
+			
+		}while(tcin==false||(res<0||res>4));
 		
-		return luachon;
+		return res;
 	}
 	
 	private int mainMenu()
@@ -205,7 +226,7 @@ public class Proxy extends Thread {
 				// insert a website into the blackList
 				System.out.println("Enter the website you want to insert to the blacklist : ");
 				String website;
-				scanner.nextLine();
+				
 				website=scanner.nextLine();
 				
 				blackList.put(website, website);
@@ -214,10 +235,27 @@ public class Proxy extends Thread {
 			}
 			else if(choice==3)
 			{
-				int number=showBlackList();
-				System.out.println("Enter the number order of the website you want to delete : ");
-				int order=scanner.nextInt();
-				deleteBlackList(order,number);
+				if(blackList.size()!=0)
+				{
+					String luachon;
+					boolean check;
+					int result=-1;
+					int number=showBlackList();
+					System.out.println("Enter the number order of the website you want to delete : ");
+					do
+					{
+						luachon=scanner.nextLine();
+						check=isInteger(luachon);
+						if(check==true)
+						{
+							result=Integer.parseInt(luachon);
+						}
+					}while(check==false||(result<0||result>blackList.size()));
+					
+					deleteBlackList(result,number);
+				}
+				else
+					System.out.println("*********Black List is empty***********");
 			}
 			else if(choice==4)
 			{
