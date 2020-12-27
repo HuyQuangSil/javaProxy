@@ -9,7 +9,7 @@ public class Proxy extends Thread {
 		myProxy.listen();  // gọi method listen() ở dưới
 
 	}
-	
+	Scanner scanner=new Scanner(System.in);
 	private ServerSocket serverSocket;  // tạo ra 1 cái socket 
 	
 	private volatile boolean running=true; // điều kiện để tiếp tục chạy hàm run() ở phía dưới
@@ -76,11 +76,10 @@ public class Proxy extends Thread {
 			}
 		}
 	}
-	
-	private void closeServer() {
-		System.out.println("\nClosing server.......");
+	private void saveBlackList()
+	{
 		try
-		{			
+		{
 			FileOutputStream fileOut=new FileOutputStream("blackList.conf");
 			ObjectOutputStream obj=new ObjectOutputStream(fileOut);
 			obj.writeObject(blackList);// ghi nguyên 1 object vào với kiểu dữ liệu HashMap<String,String>
@@ -88,11 +87,14 @@ public class Proxy extends Thread {
 			fileOut.close();
 			System.out.println("Black list is saved!!");
 		}
-		catch(Exception e) {
-			System.out.println(e);
-			e.printStackTrace();
+		catch(Exception e)
+		{
+			e.getStackTrace();
 		}
-		
+	}
+	private void closeServer() {
+		System.out.println("\nClosing server.......");
+		saveBlackList();
 		try {
 			for(Thread thread :receivingThread) {
 				if(thread.isAlive())
@@ -124,35 +126,111 @@ public class Proxy extends Thread {
 		return false;
 	}
 	
+	
+	
+	public int selectMenu(int soluachon)
+	{
+		int luachon;
+		do
+		{
+			System.out.println("Enter your choice : ");
+			luachon=scanner.nextInt();
+	
+		}while(luachon<0||luachon>4);
+		
+		return luachon;
+	}
+	
+	private int mainMenu()
+	{
+		System.out.println("==============MENU===========");
+		System.out.println("1.Show the black list");
+		System.out.println("2.Insert a website to the black list");
+		System.out.println("3.Delete a website from the black list");
+		System.out.println("4.close the server");
+		System.out.println("=============================");
+		return 4;
+	}
+	
+	private int showBlackList()
+	{
+		int count=1;
+		System.out.println("=========BLACK LIST=======");
+		for(String key :blackList.keySet())
+		{
+			System.out.println(count+"."+key);
+			count++;
+		}
+		System.out.println("==========================");
+		return count;
+	}
+	
+	
+	private boolean deleteBlackList(int order,int blist)
+	{
+		
+		if(order<0||order>blist)
+			return false;
+		String temp="";
+		int count=1;
+		for(String key:blackList.keySet())
+		{
+			if(count==order)
+			{
+				temp=key;
+				
+				break;
+			}
+			count++;
+		}
+		blackList.remove(temp);
+		saveBlackList();
+		System.out.println("=========delete successfully==========");
+		return true;
+	}
 	@Override
 	public void run()
 	{
-		Scanner scanner=new Scanner(System.in);
-		String command;
+		int choice;
 		while(running)
 		{
-			System.out.println("Enter new Site to block");
-			System.out.println("or Enter \"blocked\" to see blackList");
-			System.out.println("or Enter \"close\" to close the server");
-			command=scanner.nextLine();
-			if(command.toLowerCase().equals("blocked")) {
-				System.out.println("The current blackList is :");
-				for(String key : blackList.keySet()) {
-					System.out.println(key);
-				}
+			choice=selectMenu(mainMenu());
+			if(choice==1)
+			{
+				showBlackList();
 				System.out.println();
 			}
-			
-			else if(command.toLowerCase().equals("close")) {
+			else if (choice==2)
+			{
+				// insert a website into the blackList
+				System.out.println("Enter the website you want to insert to the blacklist : ");
+				String website;
+				scanner.nextLine();
+				website=scanner.nextLine();
+				
+				blackList.put(website, website);
+				saveBlackList();
+				System.out.println("******saving successfully*******");
+			}
+			else if(choice==3)
+			{
+				int number=showBlackList();
+				System.out.println("Enter the number order of the website you want to delete : ");
+				int order=scanner.nextInt();
+				deleteBlackList(order,number);
+			}
+			else if(choice==4)
+			{
 				running=false;
 				closeServer();
 			}
 			else
 			{
-				blackList.put(command, command);
-				System.out.println("Saved Successfully");
+				
 			}
+			
 		}
 		scanner.close();
 	}
+		
 }
