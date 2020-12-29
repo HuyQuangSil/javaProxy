@@ -1,6 +1,17 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+
+
+
+
 public class Proxy extends Thread {
 
 	public static void main(String[] args) {
@@ -16,13 +27,13 @@ public class Proxy extends Thread {
 	
 	// vì HashMap là 1 collection nên nó được serialize (tuần tự) nên có thể đọc ghi dữ liệu theo kiểu ObjectOut/InputStream
 	static HashMap<String,String>blackList;  //danh sách các website sẽ bị block
-	
+	static HashMap<String,String>bin;
 	static ArrayList<Thread>receivingThread;  // danh sách các luồng dữ liệu trong chương trình 
 	
 	public Proxy(int port) { // constructor khi khởi tạo 1 object proxy với tham số cần truyền vào là cổng để kết nối với client
 		blackList=new HashMap<String,String>(); // khởi tạo blackList là 1 collection framework kiểu HashMap (key-value)
 		receivingThread=new ArrayList<Thread>(); // Khởi tạo mảng các luồng dữ liệu trong chương trình
-		
+		bin=new HashMap<String,String>();  // khoi tao thung rac chua cac web bi xoa khoi blacklist
 		new Thread(this).start(); // gọi start() thì hàm start() sẽ gọi đến hàm run(), đây là 1 hàm đã được định nghĩa sẵn trong Thead class
 		
 		try {
@@ -46,6 +57,19 @@ public class Proxy extends Thread {
 			System.out.println(e);
 		}
 		
+		File file=new File("bin.txt");
+		try {
+			ObjectInputStream obj=new ObjectInputStream(new FileInputStream(file)); // đọc từ file backListFile theo kiểu object
+			bin=(HashMap<String,String>)obj.readObject(); // ép kiểu dữ liệu về HashMap
+			
+			obj.close();
+			
+			
+			
+		}catch(Exception e)
+		{
+			e.getStackTrace();
+		}
 		// kết nối với client 
 		
 		try {
@@ -127,54 +151,16 @@ public class Proxy extends Thread {
 	}
 	
 	
-	private boolean isInteger(String in)
-	{
-		boolean tcin=false;
-		try
-		{
-			Integer.parseInt(in);
-			tcin=true;
-		}
-		catch(Exception e)
-		{
-			e.getStackTrace();
-		}
-		return tcin;
-	}
-	
-	public int selectMenu(int soluachon)
-	{
-		String luachon;
-		int res=-1;
-		boolean tcin;
-		do
-		{
-			System.out.println("Enter your choice : ");
-			luachon=scanner.nextLine();
-			tcin=isInteger(luachon);
-			if(tcin==true)
-			{
-				res=Integer.parseInt(luachon);
-			}
-			
-		}while(tcin==false||(res<0||res>4));
-		
-		return res;
-	}
-	
-	private int mainMenu()
-	{
-		System.out.println("==============MENU===========");
-		System.out.println("1.Show the black list");
-		System.out.println("2.Insert a website to the black list");
-		System.out.println("3.Delete a website from the black list");
-		System.out.println("4.close the server");
-		System.out.println("=============================");
-		return 4;
-	}
 	
 	private int showBlackList()
 	{
+		if(blackList.isEmpty())
+		{
+			System.out.println();
+			System.out.println("*******THE BLACK LIST IS EMPTY********");
+			System.out.println();
+			return 0;
+		}
 		int count=1;
 		System.out.println("=========BLACK LIST=======");
 		for(String key :blackList.keySet())
@@ -187,11 +173,11 @@ public class Proxy extends Thread {
 	}
 	
 	
-	private boolean deleteBlackList(int order,int blist)
+	private String deleteBlackList(int order,int blist)
 	{
 		
 		if(order<0||order>blist)
-			return false;
+			return null;
 		String temp="";
 		int count=1;
 		for(String key:blackList.keySet())
@@ -207,15 +193,133 @@ public class Proxy extends Thread {
 		blackList.remove(temp);
 		saveBlackList();
 		System.out.println("=========delete successfully==========");
+		return temp;
+	}
+	
+	public void showBin()
+	{
+		if(bin.isEmpty())
+		{
+			
+			System.out.println("\n==========BIN IS EMPTY==========\n");
+			return ;
+		}
+		System.out.println("\t\t===========BIN===========");
+		int count=1;
+		for(String key:bin.keySet())
+		{
+			System.out.println(count+"."+key);
+			count++;
+		}
+		System.out.println("\t\t========================");
+	}
+	
+	private boolean isSatisfiedInsertBin(String web)
+	{
+		if(bin.isEmpty())
+			return true;
+		for(String key :bin.keySet())
+		{
+			if(web.equals(key))
+				return false;
+		}
 		return true;
 	}
+	
+	public void addToBin(String web)
+	{
+		if(isSatisfiedInsertBin(web))
+		{
+			bin.put(web, web);
+		}
+	}
+	
+	public void saveBin()
+	{
+		try
+		{
+			FileOutputStream fileOut=new FileOutputStream("bin.txt");
+			ObjectOutputStream obj=new ObjectOutputStream(fileOut);
+			obj.writeObject(bin);// ghi nguyên 1 object vào với kiểu dữ liệu HashMap<String,String>
+			obj.close();
+			fileOut.close();
+		}
+		catch(Exception e)
+		{
+			e.getStackTrace();
+		}
+	}
+	
+	public String restoreBlackList(int order)
+	{
+		if(order<0||order>bin.size())
+			return null;
+		String temp="";
+		int count=1;
+		for(String key:bin.keySet())
+		{
+			if(count==order)
+			{
+				temp=key;
+				break;
+			}
+			count++;
+		}
+		if(checkInsertBlackList(temp)) // check xem co thoa man de them vao blackList hay ko
+		{
+			blackList.put(temp, temp); // them lai vao black List
+		}
+		bin.remove(temp); // bin xoa temp khoi va save
+		saveBin();
+		return temp;
+	}
+	
+	
+	
+	
+	
+	@SuppressWarnings("unused")
+	private boolean checkInsertBlackList(String name)
+	{
+		for(String key :blackList.keySet())
+		{
+			if(key.equals(name)==true)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public String deleteBin(int order)
+	{
+		if(order<=0||order>bin.size())
+			return null;
+		String temp="";
+		int count=1;
+		for(String key:bin.keySet())
+		{
+			if(order==count)
+			{
+				temp=key;
+				break;
+			}
+			count++;
+		}
+		bin.remove(temp);
+		saveBin();
+		return temp;
+	}
+	
+	
 	@Override
 	public void run()
 	{
+		Menu menu=new Menu();
 		int choice;
 		while(running)
 		{
-			choice=selectMenu(mainMenu());
+			choice=menu.selectMenu(menu.mainMenu());
 			if(choice==1)
 			{
 				showBlackList();
@@ -226,14 +330,54 @@ public class Proxy extends Thread {
 				// insert a website into the blackList
 				System.out.println("Enter the website you want to insert to the blacklist : ");
 				String website;
-				
 				website=scanner.nextLine();
+				boolean check=checkInsertBlackList(website);
+				if(check==false)
+				{
+					System.out.println("!!!---YOUR WEBSITE HAD ALREADY EXIST IN THE BLACK LIST---");
+					System.out.println("Do you wanna try to add another website to blackList (yes/no) : ");
+					String command;
+					boolean tcin=true;
+					do
+					{
+						if(tcin)
+						{
+							System.out.println("Please enter your choose (yes/no)");
+						}
+						else
+						{
+							System.out.println("Please press 'yes' or 'no' to continue");
+						}
+						
+						command=scanner.nextLine();
+						tcin=(command.equals("no")||command.equals("yes"))?true:false;
+					}while(tcin==false);
+					if(command.equals("yes"))
+					{
+						do
+						{
+							System.out.println("Enter the website you want to block : ");
+							website=scanner.nextLine();
+						}while(!checkInsertBlackList(website));
+						blackList.put(website, website);
+						saveBlackList();
+						System.out.println("******INSERT SUCCESSFULLY*******");
+					}
+					else
+					{
+						return ;
+					}
+					
+				}
+				else
+				{
+					blackList.put(website, website);
+					saveBlackList();
+					System.out.println("******INSERT SUCCESSFULLY*******");
+				}
 				
-				blackList.put(website, website);
-				saveBlackList();
-				System.out.println("******saving successfully*******");
 			}
-			else if(choice==3)
+			else if(choice==3) // ham xoa
 			{
 				if(blackList.size()!=0)
 				{
@@ -241,23 +385,130 @@ public class Proxy extends Thread {
 					boolean check;
 					int result=-1;
 					int number=showBlackList();
-					System.out.println("Enter the number order of the website you want to delete : ");
+					System.out.println("Enter the number order of the website you want to delete (0:back) : ");
 					do
 					{
 						luachon=scanner.nextLine();
-						check=isInteger(luachon);
+						check=menu.isInteger(luachon);
 						if(check==true)
 						{
 							result=Integer.parseInt(luachon);
 						}
 					}while(check==false||(result<0||result>blackList.size()));
+					if(result==0)
+					{
+						System.out.println("----------EXIT--------");
+						
+					}
+					else
+					{
+						String temp=deleteBlackList(result,number); // xoa khoi danh sach
+						addToBin(temp); // luu vao thung rac
+					}
 					
-					deleteBlackList(result,number);
 				}
 				else
-					System.out.println("*********Black List is empty***********");
+					System.out.println("*********THE BLACK LIST IS EMPTY***********");
 			}
-			else if(choice==4)
+			else if(choice ==4)
+			{
+				
+				String command="";
+				int res=-1;
+				boolean check=false;
+				String select="";
+				do
+				{
+					do
+					{
+						showBin();
+						System.out.println("enter the order number you want to restore (0 :back) : ");
+						command=scanner.nextLine();
+						check=menu.isInteger(command);
+						if(check==true)
+						{
+							res=Integer.parseInt(command);
+							restoreBlackList(res);
+							System.out.println("==========RESTORE SUCCESSFULLY========");
+						}
+						else
+						{
+							System.out.println("!!!-------Invalid input, please try again---------!!!");
+						}
+						
+					}while(res==-1&&check==false);
+					do
+					{
+						System.out.println("Do you want to continue (yes/no)? : ");
+						select=scanner.nextLine();
+					}while(!select.equals("yes")&&!select.equals("no"));
+					
+					
+				}while(select.equals("yes"));
+				
+				saveBin();
+			}
+			else if(choice ==5)
+			{
+				// clear all the black list
+				String temp="";
+				ArrayList<String>a=new ArrayList<String>();
+				for(String key:blackList.keySet())
+				{
+					temp=key;
+					addToBin(temp);
+					a.add(temp);
+				}
+				for(String element:a)
+				{
+					blackList.remove(element);
+				}
+				saveBlackList();
+				saveBin();
+				System.out.println("*****THE BLACK LIST WAS DETELED COMPLETELY*********");
+				System.out.println();
+			}
+			else if(choice==6)
+			{
+				showBin();
+				String command="";
+				String confirm="";
+				int res=-1;
+				boolean check=false;
+				do
+				{
+					do
+					{
+						System.out.println("Enter the order number of the website you want to delete (0: back) : ");
+						command=scanner.nextLine();
+						check=menu.isInteger(command);
+						if(check==false)
+						{
+							System.out.println("!!! your input is invalid,Please input the number!!!");
+						}
+						else
+						{
+							res=Integer.parseInt(command);
+						}
+					}while(check==false||res==-1);
+					if(res!=0)
+					{
+						System.out.println("Are you sure,It will be deleted completely? (yes/no)");
+						confirm=scanner.nextLine();
+					}
+					else
+					{
+						confirm="no";
+					}
+					
+				}while(!confirm.equals("yes")&&!confirm.equals("no"));
+				if(confirm.equals("yes")) {
+					deleteBin(res);
+					saveBin();
+				}
+				
+			}
+			else if(choice==7)
 			{
 				running=false;
 				closeServer();

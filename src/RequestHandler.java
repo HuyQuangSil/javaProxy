@@ -36,7 +36,7 @@ public class RequestHandler extends Thread{
 				proxyToServerCon.setRequestProperty("User-Agent", "Mozilla/5.0");			
 				// tạo biến để đọc dữ liệu từ Webserver đến proxy và gửi cho client				
 				BufferedReader proxyToServerBR = new BufferedReader(new InputStreamReader(proxyToServerCon.getInputStream()));
-				// Send success code to client
+				// gui success code den client
 				String line = "HTTP/1.0 200 OK\n" +
 						"Proxy-agent: ProxyServer/1.0\n" +
 						"\r\n";
@@ -106,7 +106,7 @@ public class RequestHandler extends Thread{
 	
 	private void blackListRequest() {
 		try {
-			System.out.println("-------------------------ERROR PAGE-----------------------");
+			System.out.println("-------------------------FORBIDEN PAGE-----------------------");
 			BufferedWriter bufferedWriter=new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 			String line = "HTTP/1.0 403 Access Forbidden \n" +
 					"User-Agent: ProxyServer/1.0\n" +
@@ -126,6 +126,7 @@ public class RequestHandler extends Thread{
 			String content = contentBuilder.toString();
 			bufferedWriter.write(content); // trả về cho user biết là page đã bị blocked
 			bufferedWriter.flush();
+			bufferedWriter.close();
 			
 		}catch(Exception e)
 		{
