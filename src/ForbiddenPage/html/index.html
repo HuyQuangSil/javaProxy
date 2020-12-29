@@ -405,12 +405,9 @@
     <script>
         let listButton = document.getElementById("nav-icon");
         let closeButton = document.getElementById("close-icon");
-        listButton.onclick = () => {
-            document.getElementById("students-section").style.transform = "translateX(0)";
-        }
-        closeButton.onclick = () => {
-            document.getElementById("students-section").style.transform = "translateX(-100%)";
-        }
+        listButton.onclick =() => document.getElementById("students-section").style.transform = "translateX(0)";
+        closeButton.onclick = () => document.getElementById("students-section").style.transform = "translateX(-100%)";
+        
     </script>
 </body>
 </html>

@@ -250,10 +250,10 @@ public class Proxy extends Thread {
 		}
 	}
 	
-	public String restoreBlackList(int order)
+	public boolean restoreBlackList(int order)
 	{
-		if(order<0||order>bin.size())
-			return null;
+		if(order<=0||order>bin.size())
+			return false;
 		String temp="";
 		int count=1;
 		for(String key:bin.keySet())
@@ -271,7 +271,7 @@ public class Proxy extends Thread {
 		}
 		bin.remove(temp); // bin xoa temp khoi va save
 		saveBin();
-		return temp;
+		return true;
 	}
 	
 	
