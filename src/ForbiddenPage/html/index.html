@@ -87,7 +87,13 @@
             bottom: -4px;
             right: -4px;
             z-index: -1;
+            
+        }
+        .card::before, .card::after {
             background: linear-gradient(235deg, #e100ff, #060c21, #3700ff);
+        }
+        #forbidden-div::before, #forbidden-div::after {
+            background: rgb(199, 199, 18);
         }
         #forbidden-div::after, .card::after {
             content: '';
@@ -99,7 +105,6 @@
             right: -5px;
             z-index: -2;
             filter: blur(50px);
-            background: linear-gradient(235deg, #e100ff, #060c21, #3700ff);
         }
         .border-line {
             position: absolute;
