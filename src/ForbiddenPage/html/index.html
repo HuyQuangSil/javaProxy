@@ -244,6 +244,24 @@
         }
         .card:hover {
             background: linear-gradient(235deg, #e100ff, #060c21, #3700ff);
+            animation: shake 0.5s;
+        }
+        @keyframes shake{
+            0% {
+                transform: rotate(3deg);
+            }
+            25% {
+                transform: rotate(-3deg);
+            }
+            50% {
+                transform: rotate(3deg);
+            }
+            75% {
+                transform: rotate(-3deg);
+            }
+            100% {
+                transform: rotate(0);
+            }
         }
         .card-image {
             width: 250px;
