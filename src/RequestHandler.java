@@ -114,7 +114,7 @@ public class RequestHandler extends Thread{
 			bufferedWriter.write(line);
 			StringBuilder contentBuilder = new StringBuilder();
 			try {
-			    BufferedReader in = new BufferedReader(new FileReader("src/ForbiddenPage/html/index.html"));
+			    BufferedReader in = new BufferedReader(new FileReader("index.html"));
 			    String str;
 			    while ((str = in.readLine()) != null) {
 			        contentBuilder.append(str);
