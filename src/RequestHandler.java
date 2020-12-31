@@ -28,7 +28,39 @@ public class RequestHandler extends Thread{
 	private void sendNonCachedToClient(String urlString){
 
 		try{
-										
+			
+			int fileExtensionIndex = urlString.lastIndexOf(".");
+			String fileExtension;
+
+			// Get the type of file
+			fileExtension = urlString.substring(fileExtensionIndex, urlString.length());
+			if((fileExtension.contains(".png")) || fileExtension.contains(".jpg") ||fileExtension.contains(".jpeg") || fileExtension.contains(".gif")){
+				// Create the URL
+				URL remoteURL = new URL(urlString);
+				BufferedImage image = ImageIO.read(remoteURL); 
+
+				if(image != null) {
+					String line = "HTTP/1.0 200 OK\n" +
+							"Proxy-agent: ProxyServer/1.0\n" +
+							"\r\n"; // status tráº£ vá» dá»¯ liá»‡u OK
+					proxyToClientWr.write(line); // tráº£ vá» cho client biáº¿t lÃ  dá»¯ liá»‡u áº£nh nÃ y á»•n (OK)
+					proxyToClientWr.flush();  // xÃ³a bá»™ nhá»› Ä‘á»‡m
+
+					// Send them the image data
+					ImageIO.write(image, fileExtension.substring(1), clientSocket.getOutputStream());
+				
+				} else {
+					
+					String error = "HTTP/1.0 404 NOT FOUND\n" +
+							"Proxy-agent: ProxyServer/1.0\n" +
+							"\r\n";
+					proxyToClientWr.write(error); // tráº£ vá» lá»—i
+					proxyToClientWr.flush();
+					return;
+				}
+			} 
+			else
+			{
 				URL remoteURL = new URL(urlString); // khởi tạo 1 class URL để giữ đường dẫn cần truy cập đến
 				// tạo 1 connection và cho phép client truy cập vào URL
 				HttpURLConnection proxyToServerCon = (HttpURLConnection)remoteURL.openConnection();
@@ -55,10 +87,11 @@ public class RequestHandler extends Thread{
 				if(proxyToServerBR != null){
 					proxyToServerBR.close();
 				}
-				// đóng file ghi cho client
-				if(proxyToClientWr != null){
-					proxyToClientWr.close();
-				}
+			}
+			// đóng file ghi cho client
+			if(proxyToClientWr != null){
+				proxyToClientWr.close();
+			}
 		} 
 		catch (Exception e){
 			e.printStackTrace();
