@@ -28,43 +28,92 @@ public class RequestHandler extends Thread{
 	private void sendNonCachedToClient(String urlString){
 
 		try{
-										
-				URL remoteURL = new URL(urlString); // khởi tạo 1 class URL để giữ đường dẫn cần truy cập đến
-				// tạo 1 connection và cho phép client truy cập vào URL
+			
+			// Compute a logical file name as per schema
+			// This allows the files on stored on disk to resemble that of the URL it was taken from
+			int fileExtensionIndex = urlString.lastIndexOf(".");
+			String fileExtension;
+
+			// Get the type of file
+			fileExtension = urlString.substring(fileExtensionIndex, urlString.length());
+
+			
+
+			// Check if file is an image
+			if((fileExtension.contains(".png")) || fileExtension.contains(".jpg") ||fileExtension.contains(".jpeg") || fileExtension.contains(".gif")){
+				// Create the URL
+				URL remoteURL = new URL(urlString);
+				BufferedImage image = ImageIO.read(remoteURL); 
+
+				if(image != null) { 
+					String line = "HTTP/1.0 200 OK\n" +
+							"Proxy-agent: ProxyServer/1.0\n" +
+							"\r\n"; // 
+					proxyToClientWr.write(line); 
+					proxyToClientWr.flush();  
+
+					// Send them the image data
+					ImageIO.write(image, fileExtension.substring(1), clientSocket.getOutputStream());
+
+				// No image received from remote server
+				} else {
+					
+					String error = "HTTP/1.0 404 NOT FOUND\n" +
+							"Proxy-agent: ProxyServer/1.0\n" +
+							"\r\n";
+					proxyToClientWr.write(error); // tráº£ vá» lá»—i
+					proxyToClientWr.flush();
+					return;
+				}
+			} 
+
+			// File is a text file
+			else {
+								
+				// Create the URL
+				URL remoteURL = new URL(urlString);
+				// Create a connection to remote server
 				HttpURLConnection proxyToServerCon = (HttpURLConnection)remoteURL.openConnection();
-				proxyToServerCon.setRequestMethod("GET");  // set Request để lấy dữ liệu là phương thức GET
-				proxyToServerCon.setRequestProperty("User-Agent", "Mozilla/5.0");			
-				// tạo biến để đọc dữ liệu từ Webserver đến proxy và gửi cho client				
+				proxyToServerCon.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
+				proxyToServerCon.setRequestProperty("Content-Language", "en-US");  
+				//proxyToServerCon.setUseCaches(false);
+				proxyToServerCon.setDoOutput(true);
+			
+				// Create Buffered Reader from remote Server
 				BufferedReader proxyToServerBR = new BufferedReader(new InputStreamReader(proxyToServerCon.getInputStream()));
-				// gui success code den client
+				
+
+			
 				String line = "HTTP/1.0 200 OK\n" +
 						"Proxy-agent: ProxyServer/1.0\n" +
 						"\r\n";
 				proxyToClientWr.write(line);
 				
 				
-				//  proxy đọc dữ liệu từ server 
+				
 				while((line = proxyToServerBR.readLine()) != null){
 					
-					proxyToClientWr.write(line); // proxy chuyển dữ liệu từ proxy đến client
+					proxyToClientWr.write(line); 
 					
 				}
-				proxyToClientWr.flush(); // xoa bộ nhớ đệm
-		
-				// đóng file đọc
+				proxyToClientWr.flush();
+
+				// Close Down Resources
 				if(proxyToServerBR != null){
 					proxyToServerBR.close();
 				}
-				// đóng file ghi cho client
-				if(proxyToClientWr != null){
-					proxyToClientWr.close();
-				}
+			}
+			// Close down resources
+			
+			if(proxyToClientWr != null){
+				proxyToClientWr.close();
+			}
 		} 
+
 		catch (Exception e){
 			e.printStackTrace();
 		}
 	}
-
 	@Override
 	public void run()
 	{
@@ -114,7 +163,7 @@ public class RequestHandler extends Thread{
 			bufferedWriter.write(line);
 			StringBuilder contentBuilder = new StringBuilder();
 			try {
-			    BufferedReader in = new BufferedReader(new FileReader("index.html"));
+			    BufferedReader in = new BufferedReader(new FileReader("src/ForbiddenPage/index.html"));
 			    String str;
 			    while ((str = in.readLine()) != null) {
 			        contentBuilder.append(str);

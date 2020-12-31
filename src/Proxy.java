@@ -38,10 +38,10 @@ public class Proxy extends Thread {
 		
 		try {
 			
-			File blackListFile =new File("blackList.conf"); // cố để mở file "backList.conf" 
+			File blackListFile =new File("src/blackListAndBin/blackList.conf"); // cố để mở file "backList.conf" 
 			
 			if(!blackListFile.exists()) { // nếu file không tồn tại
-				System.out.println("Can not find any File like this!!!");
+				System.out.println("Can't find any File like this!!!");
 				blackListFile.createNewFile(); // tạo ra 1 file mới có tên "blackList.conf" trong folder
 			}
 			else {
@@ -57,7 +57,7 @@ public class Proxy extends Thread {
 			System.out.println(e);
 		}
 		
-		File file=new File("bin.txt");
+		File file=new File("src/blackListAndBin/bin.txt");
 		try {
 			ObjectInputStream obj=new ObjectInputStream(new FileInputStream(file)); // đọc từ file backListFile theo kiểu object
 			bin=(HashMap<String,String>)obj.readObject(); // ép kiểu dữ liệu về HashMap
@@ -104,7 +104,7 @@ public class Proxy extends Thread {
 	{
 		try
 		{
-			FileOutputStream fileOut=new FileOutputStream("blackList.conf");
+			FileOutputStream fileOut=new FileOutputStream("src/blackListAndBin/blackList.conf");
 			ObjectOutputStream obj=new ObjectOutputStream(fileOut);
 			obj.writeObject(blackList);// ghi nguyên 1 object vào với kiểu dữ liệu HashMap<String,String>
 			obj.close();
@@ -238,7 +238,7 @@ public class Proxy extends Thread {
 	{
 		try
 		{
-			FileOutputStream fileOut=new FileOutputStream("bin.txt");
+			FileOutputStream fileOut=new FileOutputStream("src/blackListAndBin/bin.txt");
 			ObjectOutputStream obj=new ObjectOutputStream(fileOut);
 			obj.writeObject(bin);// ghi nguyên 1 object vào với kiểu dữ liệu HashMap<String,String>
 			obj.close();
